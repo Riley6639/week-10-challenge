@@ -22,37 +22,38 @@ class Cli {
         ]);
         switch (answers.action) {
             case 'view all employees':
-                this.viewAllEmployees();
+                await this.viewAllEmployees();
+                this.start();
                 break;
 
             case 'view all roles':
-                table(await this.viewAllRoles());
-                this.start(); // Restart the CLI after viewing roles
+                await this.viewAllRoles();
+                this.start();
                 break;
 
             case 'view all departments':
-                table(await this.viewAllDepartments());
-                this.start(); // Restart the CLI after viewing departments
+                await this.viewAllDepartments();
+                this.start();
                 break;
 
             case 'add employee':
                 await this.addEmployee();
-                this.start(); // Restart the CLI after adding employee
+                this.start();
                 break;
 
             case 'add role':
                 await this.addRole();
-                this.start(); // Restart the CLI after adding role
+                this.start();
                 break;
 
             case 'add department':
                 await this.addDepartment();
-                this.start(); // Restart the CLI after adding department    
+                this.start();
                 break;
 
             default:
                 console.log('Invalid action');
-                await this.start();
+                this.start();
                 break;
         }
     }
@@ -81,13 +82,26 @@ class Cli {
                 message: 'Who is the employee\'s manager?',
             },
         ]);
+
         const employee: employee = {
             firstName: answers.firstName,
             lastName: answers.lastName,
             role: answers.role,
             manager: answers.manager,
         };
-        return employee;
+
+        const sql = 'INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ($1, $2, $3, $4)';
+
+        const managerResult = await pool.query('SELECT id FROM employee WHERE first_name = $1 AND last_name = $2', [employee.manager.split(' ')[0], employee.manager.split(' ')[1]]);
+        const managerId = managerResult.rows.length > 0 ? managerResult.rows[0].id : null;
+
+        const roleResult = await pool.query('SELECT id FROM role WHERE title = $1', [employee.role]);
+        const roleId = roleResult.rows.length > 0 ? roleResult.rows[0].id : null;
+
+        await pool.query(sql, [employee.firstName, employee.lastName, roleId, managerId]);
+
+        return table(await this.viewAllEmployees());
+
     }
 
     // method to add a role
@@ -115,7 +129,16 @@ class Cli {
             salary: parseFloat(answers.salary),
             department: answers.department,
         };
-        return role;
+
+        const sql = 'INSERT INTO role (title, salary, department_id) VALUES ($1, $2, $3)';
+
+        const departmentResult = await pool.query('SELECT id FROM department WHERE name = $1', [role.department]);
+        const departmentId = departmentResult.rows.length > 0 ? departmentResult.rows[0].id : null;
+
+        await pool.query(sql, [role.title, role.salary, departmentId]);
+
+        return table(await this.viewAllRoles());
+
     }
 
     // method to add a department
@@ -127,13 +150,16 @@ class Cli {
                 message: 'What is the name of the department?',
             },
         ]);
+
         const department: department = {
             name: answers.name,
         };
 
-        await pool.query('INSERT INTO department (name) VALUES ($1)', [department.name]);
-        table(await this.viewAllDepartments());
-        return department;
+        const sql = 'INSERT INTO department (name) VALUES ($1)';
+
+        await pool.query(sql, [department.name]);
+
+        return table(await this.viewAllDepartments());
     }
 
     // method to view all employees
@@ -145,22 +171,25 @@ class Cli {
         const employees = await pool.query(sql);
 
         // displaying the employees in a table format
-        table(employees.rows);
-        
-        // restarting the CLI
-        this.start(); 
+        return table(employees.rows);
     }
 
     // method to view all roles
     async viewAllRoles() {
-        const roles = await pool.query('SELECT * FROM role;');
-        return roles.rows;
+        const sql = 'SELECT * FROM role;';
+
+        const roles = await pool.query(sql);
+
+        return table(roles.rows);
     }
 
     // method to view all departments
     async viewAllDepartments() {
-        const departments = await pool.query('SELECT * FROM department;');
-        return departments.rows;
+        const sql = 'SELECT * FROM department;';
+
+        const departments = await pool.query(sql);
+
+        return table(departments.rows);
     }
 }
 
