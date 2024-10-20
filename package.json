@@ -1,0 +1,30 @@
+{
+  "name": "week-10-challenge",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "db:setup": "psql -U postgres -f db/schema/create_tables.sql && psql -U postgres -f db/seeds/seed_data.sql",
+    "db:reset": "psql -U postgres -f db/schema/create_tables.sql",
+    "db:seed": "psql -U postgres -f db/seeds/seed_data.sql",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "console.table": "^0.10.0",
+    "dotenv": "^16.4.5",
+    "inquirer": "^8.2.4",
+    "pg": "^8.13.0",
+    "typescript": "^5.4.5"
+  },
+  "devDependencies": {
+    "@types/inquirer": "^9.0.7",
+    "@types/pg": "^8.11.10",
+    "@types/console.table": "^0.10.0"
+  }
+}
